@@ -1,0 +1,102 @@
+NodeJS Talk November 13th 2012
+
+Intro
+	I'm Andrew Brampton bramp.net
+	Acedmic background, peer-to-peer and video-on-demand
+	Now work at a mobile marketing company
+	Don't get to do Node in my day job :( But we are hiring Java devs
+
+Wiimote
+	Used to control the game console
+	Cool for hacking
+		Has IR camera
+		Accelerator
+		Buttons
+	DEMO!
+
+Tech
+	Using Nodejs
+	Socket.io (Websockets) for the realtime feedback
+	and custom nodejs addon
+
+Nodejs addon
+	Originally by Tim Branyen @tbranyen
+	Uses libcwiid (a C library written to interface with a Wiimote)
+	Hacked up by me to be multi-threaded fully callback driven
+
+NodeJS is Single threaded with many worker threads
+	Show image
+	Async, cool
+
+Old nodewii
+	Show image
+	Talk about negitives
+
+New nodewii
+	Show image
+	Talk about why this is better
+
+Lessons learnt
+
+Don't do any V8 on worker threads
+	Show bad image
+
+Threading is hard
+V8 memory model is tricky
+Most extensions out there, (mysql, mongodb), leak memory, corrupt memory
+
+int WiiMote::WatchMessages() {
+  ev_timer_init(&this->msg_timer, TriggerMessages, 1, .02);
+  ev_timer_start(EV_DEFAULT_UC_ &this->msg_timer);
+}
+
+void WiiMote::TriggerMessages(EV_P_ ev_timer *watcher, int revents) {
+  // Check IR
+  // Check button state
+  // Check acceleramtors
+}
+
+Changed it to callback 
+
+
+
+http://www.websequencediagrams.com/
+
+title Node.js Threads
+
+v8->worker: doSomething()
+note right of worker: Do some blocking task
+worker->v8: done()
+
+
+
+title Old node-wii flow - Polling
+
+v8->wiimote: anyChange()
+wiimote->v8: NO
+note left of v8: wait 200ms
+v8->wiimote: anyChange()
+wiimote->v8: YES
+v8->v8: emit()
+
+
+title New node-wii flow - Callback
+
+v8->wiimote: notifyMe()
+note left of v8: some time goes by
+wiimote->v8: buttonPress()
+v8->v8: emit()
+
+
+title New (bad) node-wii flow - Callback
+
+v8->wiimote: notifyMe()
+note left of v8: some time goes by
+wiimote->wiimote: emit()
+note right of wiimote: CRASH
+
+
+  wiimote.on( 'button', function( data ) {
+	  console.log(data);
+	  io.sockets.emit('button', data);
+  });

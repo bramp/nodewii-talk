@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<!--
+  Talk about nodewii by Andrew Brampton
+
+  Using the Google HTML5 slide template
+  URL: http://code.google.com/p/html5slides/
+-->
+
+<html>
+  <head>
+    <title>Controlling Node.js with a wiimote</title>
+
+    <meta charset='utf-8'>
+    <script src='slides.js'></script>
+  </head>
+  
+  <style>
+    .slides.template-bramp article.biglogo {
+      /*background: white url(images/google-logo.png) 50% 50% no-repeat;*/
+    }
+
+    .slides.template-bramp > article:not(.nobackground):not(.biglogo) {
+      background: url(bramp-logo-small.png) 710px 625px no-repeat;
+      background-color: white;
+    }
+
+    .slides.template-bramp h1 {
+      margin-top: 150px;
+    }
+
+/*
+    .slides.template-bramp article {
+      width: 1000px;
+      height: 700px;
+    }
+*/
+
+  </style>
+
+  <body style='display: none'>
+
+    <section class='slides layout-regular template-bramp'>
+
+      <article>
+        <h1>Controlling Node.js with a wiimote</h1>
+        <strong>My experiences with developing multi-threaded nodejs addon</strong>
+        <p>
+          
+          <br />
+          Andrew Brampton
+          <br />
+          November 13th, 2012
+        </p>
+      </article>
+
+      <article>
+        <h3>
+          What is a wiimote?
+        </h3>
+        <ul>
+          <li>
+            Used to control the Wii
+          </li>
+          <li>
+            Cool for hacking
+            <ul>
+              <li>Accelerator</li>
+              <li>Buttons</li>
+              <li>Has IR camera</li>
+            </ul>
+          </li>
+          <li>
+            Uses bluetooth
+          </li>
+          <li>
+            Open source library called libcwiid.
+            <ul>
+              <li>Library written in C</li>
+            </ul>
+          </li>
+          <li>
+            <strong><a href='http://localhost:8888/'>DEMO!</a></strong>
+          </li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Tech</h3>
+            <ul>
+              <li>Using Nodejs (obviously)</li>
+              <li>Socket.io (Websockets) for the realtime feedback</li>
+              <li>and custom nodejs addon, nodewii</li>
+              <ul>
+                <li>Originally by Tim Branyen @tbranyen</li>
+                <li>problem, uses polling, not callback/event driven</li>
+              </ul>
+            </ul>
+      </article>
+
+      <article>
+        <!--<h3>NodeJS is Single threaded with many worker threads</h3>-->
+        <p>
+          <img class='centered' style='height: 600px' src='nodejs-flow.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+      </article>
+
+      <article>
+        <!--<h3>Old nodewii threading model</h3>-->
+        <p>
+          <img class='centered' style='height: 600px' src='old-flow.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+      </article>
+
+      <article>
+        <!--<h3>New nodewii threading model</h3>-->
+        <p>
+          <img class='centered' style='height: 600px' src='new-flow.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+      </article>
+
+      <article>
+        <h2>
+          Leasons learnt
+        </h2>
+      </article>
+
+      <article>
+        <h3>Don't do any V8 on worker threads</h3>
+        <p>
+          <img class='centered' style='height: 500px' src='new-flow-bad.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+      </article>
+
+      <article>
+        <h3>Threading is hard</h3>
+        <ul>
+          <li>V8 memory model is tricky</li>
+          <li>Most extensions out there leak memory, or use it incorrectly</li>
+          <ul>
+            <li>node-mongodb-native</li>
+            <li>node-mysql</li>
+          </ul>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Node is constantly changing!</h3>
+        <ul>
+          <li>EventEmitter</li>
+          <li>libev->libuv</li>
+          <li>waf->gyp</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>
+          This slide has some code
+        </h3>
+        <section>
+        <pre>
+&lt;script type='text/javascript'&gt;
+  // Say hello world until the user starts questioning
+  // the meaningfulness of their existence.
+  function helloWorld(world) {
+    for (var i = 42; --i &gt;= 0;) {
+      alert('Hello ' + String(world));
+    }
+  }
+&lt;/script&gt;
+&lt;style&gt;
+  p { color: pink }
+  b { color: blue }
+  u { color: 'umber' }
+&lt;/style&gt;
+</pre>
+        </section>
+      </article>
+      
+      <article class='smaller'>
+        <h3>
+          This slide has some code (small font)
+        </h3>
+        <section>
+        <pre>
+&lt;script type='text/javascript'&gt;
+  // Say hello world until the user starts questioning
+  // the meaningfulness of their existence.
+  function helloWorld(world) {
+    for (var i = 42; --i &gt;= 0;) {
+      alert('Hello ' + String(world));
+    }
+  }
+&lt;/script&gt;
+&lt;style&gt;
+  p { color: pink }
+  b { color: blue }
+  u { color: 'umber' }
+&lt;/style&gt;
+</pre>
+        </section>
+      </article>
+      
+      <article>
+        <q>
+          The best way to predict the future is to invent it.
+        </q>
+        <div class='author'>
+          Alan Kay
+        </div>
+      </article>
+      
+      <article class='smaller'>
+        <q>
+          A distributed system is one in which the failure of a computer 
+          you didn’t even know existed can render your own computer unusable.
+        </q>
+        <div class='author'>
+          Leslie Lamport
+        </div>
+      </article>
+      
+      <article class='nobackground'>
+        <h3>
+          A slide with an embed + title
+        </h3>
+        
+        <iframe src='http://www.google.com/doodle4google/history.html'></iframe>
+      </article>
+
+      <article class='nobackground'>
+        <iframe src='http://www.google.com/doodle4google/history.html'></iframe>
+      </article>
+
+      <article class='fill'>
+        <h3>
+          Full-slide embed with (optional) slide title on top
+        </h3>
+        <iframe src='http://www.google.com/doodle4google/history.html'></iframe>
+      </article>
+      
+      <article>
+        <h3>
+          Thank you!
+        </h3>
+        
+        <ul>
+          <li>
+            <a href='http://www.google.com'>google.com</a>
+        </ul>
+      </article>
+
+    </section>
+
+  </body>
+</html>
