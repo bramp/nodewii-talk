@@ -29,6 +29,18 @@
       margin-top: 150px;
     }
 
+    .slides.template-bramp h1.top {
+      margin-top: 0;
+    }
+
+    .slides.template-bramp h3 {
+      font-size: 45px;
+    }
+/*
+    .slides.template-bramp h3:before {
+      content: "// ";
+    }
+*/
 /*
     .slides.template-bramp article {
       width: 1000px;
@@ -55,9 +67,7 @@
       </article>
 
       <article>
-        <h3>
-          What is a wiimote?
-        </h3>
+        <h3>What is a wiimote?</h3>
         <ul>
           <li>
             Used to control the Wii
@@ -65,7 +75,7 @@
           <li>
             Cool for hacking
             <ul>
-              <li>Accelerator</li>
+              <li>Accelerometer</li>
               <li>Buttons</li>
               <li>Has IR camera</li>
             </ul>
@@ -99,9 +109,9 @@
       </article>
 
       <article>
-        <!--<h3>NodeJS is Single threaded with many worker threads</h3>-->
+        <h3>NodeJS is Single threaded with many worker threads</h3>
         <p>
-          <img class='centered' style='height: 600px' src='nodejs-flow.png'>
+          <img class='centered' style='height: 500px' src='nodejs-flow.png'>
         </p>
         <div class='source'>
           Source: www.websequencediagrams.com
@@ -109,9 +119,9 @@
       </article>
 
       <article>
-        <!--<h3>Old nodewii threading model</h3>-->
+        <h3>Old nodewii threading model</h3>
         <p>
-          <img class='centered' style='height: 600px' src='old-flow.png'>
+          <img class='centered' style='height: 500px' src='old-flow.png'>
         </p>
         <div class='source'>
           Source: www.websequencediagrams.com
@@ -119,13 +129,63 @@
       </article>
 
       <article>
-        <!--<h3>New nodewii threading model</h3>-->
+        <h3>New nodewii threading model</h3>
         <p>
-          <img class='centered' style='height: 600px' src='new-flow.png'>
+          <img class='centered' style='height: 500px' src='new-flow.png'>
         </p>
         <div class='source'>
           Source: www.websequencediagrams.com
         </div>
+      </article>
+
+      <article>
+        <h3>Big picture</h3>
+        <p>
+          <img class='centered' style='height: 500px' src='full-flow.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+      </article>
+
+      <article>
+        <h3>// Server code</h3>
+        <section>
+        <pre>
+var wii = require(&#39;../../nodewii&#39;)
+  , express = require(&#39;express&#39;)
+  , app     = express()
+  , http    = require(&#39;http&#39;)
+  , server  = http.createServer(app)
+  , io      = require(&#39;socket.io&#39;).listen(server);
+
+var wiimote = new wii.WiiMote();
+
+wiimote.connect( &#39;00:00:00:00:00:00&#39;, function( err ) {
+  console.log(&#39;connected&#39;);
+
+  wiimote.on( &#39;button&#39;, function( data ) {
+    io.sockets.emit(&#39;button&#39;, data);
+  });
+
+});
+</pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>// Client code</h3>
+        <section>
+        <pre>
+&lt;script src=&quot;/socket.io/socket.io.js&quot;&gt;&lt;/script&gt;
+</pre>
+<pre>
+var socket = io.connect();
+socket.on( &#39;button&#39;, function( data ) {
+  console.log(&#39;button was pressed &#39; + data);
+});
+</pre>
+        </section>
       </article>
 
       <article>
@@ -148,11 +208,17 @@
         <h3>Threading is hard</h3>
         <ul>
           <li>V8 memory model is tricky</li>
+          <ul>
+            <li>Easy to hold memory too long</li>
+            <li>Easy for memory to be garbage collected</li>
+            <li>v8 Embedder's Guide <a href="https://developers.google.com/v8/embed">developers.google.com/v8/embed</a></li>
+          </ul>
           <li>Most extensions out there leak memory, or use it incorrectly</li>
           <ul>
             <li>node-mongodb-native</li>
             <li>node-mysql</li>
           </ul>
+          <li>Valgrind, Clang, and other tools really useful!</li>
         </ul>
       </article>
 
@@ -160,106 +226,43 @@
         <h3>Node is constantly changing!</h3>
         <ul>
           <li>EventEmitter</li>
-          <li>libev->libuv</li>
+          <ul>
+            <li>emit('something')</li>
+            <li>on('something', function () {...})</li>
+          </ul>
+          <li>libev -> libuv</li>
+          <ul>
+            <li>
+              The internal threading library used
+            </li>
+          </ul>
           <li>waf->gyp</li>
+          <ul>
+            <li>
+              Build system
+            </li>
+          </ul>
         </ul>
       </article>
 
-      <article>
-        <h3>
-          This slide has some code
-        </h3>
-        <section>
-        <pre>
-&lt;script type='text/javascript'&gt;
-  // Say hello world until the user starts questioning
-  // the meaningfulness of their existence.
-  function helloWorld(world) {
-    for (var i = 42; --i &gt;= 0;) {
-      alert('Hello ' + String(world));
-    }
-  }
-&lt;/script&gt;
-&lt;style&gt;
-  p { color: pink }
-  b { color: blue }
-  u { color: 'umber' }
-&lt;/style&gt;
-</pre>
-        </section>
-      </article>
-      
-      <article class='smaller'>
-        <h3>
-          This slide has some code (small font)
-        </h3>
-        <section>
-        <pre>
-&lt;script type='text/javascript'&gt;
-  // Say hello world until the user starts questioning
-  // the meaningfulness of their existence.
-  function helloWorld(world) {
-    for (var i = 42; --i &gt;= 0;) {
-      alert('Hello ' + String(world));
-    }
-  }
-&lt;/script&gt;
-&lt;style&gt;
-  p { color: pink }
-  b { color: blue }
-  u { color: 'umber' }
-&lt;/style&gt;
-</pre>
-        </section>
-      </article>
-      
-      <article>
-        <q>
-          The best way to predict the future is to invent it.
-        </q>
-        <div class='author'>
-          Alan Kay
-        </div>
-      </article>
-      
-      <article class='smaller'>
-        <q>
-          A distributed system is one in which the failure of a computer 
-          you didn’t even know existed can render your own computer unusable.
-        </q>
-        <div class='author'>
-          Leslie Lamport
-        </div>
-      </article>
-      
-      <article class='nobackground'>
-        <h3>
-          A slide with an embed + title
-        </h3>
-        
-        <iframe src='http://www.google.com/doodle4google/history.html'></iframe>
-      </article>
-
-      <article class='nobackground'>
-        <iframe src='http://www.google.com/doodle4google/history.html'></iframe>
-      </article>
-
-      <article class='fill'>
-        <h3>
-          Full-slide embed with (optional) slide title on top
-        </h3>
-        <iframe src='http://www.google.com/doodle4google/history.html'></iframe>
-      </article>
-      
-      <article>
-        <h3>
-          Thank you!
-        </h3>
-        
+      <article class="fill">
+        <h3>Thanks - Questions?</h3>
+        <h4>
+          Andrew Brampton - <a href="http://bramp.net/">http://bramp.net</a><br />
+          Get my contact by texting "<span class="blue">bramp</span>" to <span class="blue">99222</span>
+        </h4>
         <ul>
-          <li>
-            <a href='http://www.google.com'>google.com</a>
+          <li>nodewii - <a href="https://github.com/bramp/nodewii">github.com/bramp/nodewii</a></li>
+          <li>libcwiid - <a href="http://abstrakraft.org/cwiid/wiki/libcwiid">abstrakraft.org/cwiid/wiki/libcwiid</a></li>
+          <li>Node.js Addons - <a href="http://nodejs.org/api/addons.html">nodejs.org/api/addons.html</a></li>
+          <li>v8 Embedder's Guide - <a href="http://developers.google.com/v8/embed">developers.google.com/v8/embed</a></li>
         </ul>
+
+        <br />
+        <h3>
+          <span class="red">SoundBite Communications is hiring!</span><br />
+        </h3>
+        </center>
       </article>
 
     </section>
