@@ -81,6 +81,14 @@
         </p>
       </article>
 
+      <article>
+        <h3>whoami</h3>
+        <ul>
+          <li>Andrew Brampton</li>
+          <li>http://bramp.net/ / @TheBramp
+          <li><span class="red">Genesys Labs</span></li>
+        </ul>
+      </article>
 
       <article>
         <h3>TOC</h3>
@@ -93,6 +101,7 @@
             <li>Initialisation</li>
             <li>Calling a function</li>
             <li>Async Work</li>
+            <li>if there is time, EventEmitters</li>
           </ul>
           <li>Lessons Learnt</li>
         </ul>
@@ -167,10 +176,10 @@
 &lt;script src=&quot;/socket.io/socket.io.js&quot;&gt;&lt;/script&gt;
 </pre>
 <pre>
-var socket = io.connect();
-socket.on( &#39;button&#39;, function( data ) {
-  console.log(&#39;button was pressed &#39;, data);
-});
+1. var socket = io.connect();
+2. socket.on( &#39;button&#39;, function( data ) {
+3.   console.log(&#39;button was pressed &#39;, data);
+4. });
 </pre>
         </section>
       </article>
@@ -179,23 +188,22 @@ socket.on( &#39;button&#39;, function( data ) {
         <h3>// Server (Node) code</h3>
         <section>
         <pre>
-var wii = require(&#39;nodewii&#39;)
-  , express = require(&#39;express&#39;)
-  , app     = express()
-  , http    = require(&#39;http&#39;)
-  , server  = http.createServer(app)
-  , io      = require(&#39;socket.io&#39;).listen(server);
-
-var wiimote = new wii.WiiMote();
-
-wiimote.connect( &#39;00:00:00:00:00:00&#39;, function( err ) {
-  console.log(&#39;connected&#39;);
-
-  wiimote.on( &#39;button&#39;, function( data ) {
-    io.sockets.emit(&#39;button&#39;, data);
-  });
-
-});
+ 1. var wii = require(&#39;nodewii&#39;)
+ 2.  , express = require(&#39;express&#39;)
+ 3.  , app     = express()
+ 4.  , http    = require(&#39;http&#39;)
+ 5.  , server  = http.createServer(app)
+ 6.  , io      = require(&#39;socket.io&#39;).listen(server);
+ 7.
+ 8. var wiimote = new wii.WiiMote();
+ 9.
+10. wiimote.connect( &#39;00:00:00:00:00:00&#39;, function( err ) {
+11.  console.log(&#39;connected&#39;);
+12.
+13.  wiimote.on( &#39;button&#39;, function( data ) {
+14.    io.sockets.emit(&#39;button&#39;, data);
+15.  });
+16. });
 </pre>
         </section>
       </article>
@@ -265,17 +273,16 @@ wiimote.connect( &#39;00:00:00:00:00:00&#39;, function( err ) {
         <h3>base.cc</h3>
         <section>
         <pre>
-#include &lt;node.h&gt;
-#include &lt;v8.h&gt;
-
-#include &quot;../include/wiimote.h&quot;
-
-void init(Handle&lt;v8::Object&gt; target) {
-  WiiMote::Initialize(target);
-}
-
-NODE_MODULE(nodewii, init);
-        </pre>
+ 1. #include &lt;node.h&gt;
+ 2. #include &lt;v8.h&gt;
+ 3.
+ 4. #include &quot;../include/wiimote.h&quot;
+ 5.
+ 6. void init(Handle&lt;v8::Object&gt; target) {
+ 7.  WiiMote::Initialize(target);
+ 8. }
+ 9. 
+10. NODE_MODULE(nodewii, init);</pre>
         <ul>
           <li>Include v8.h</li>
           <li>All addons need <b>NODE_MODULE</b></li>
@@ -287,24 +294,23 @@ NODE_MODULE(nodewii, init);
         <h3>Initialize(...)</h3>
         <section>
         <pre>
-void WiiMote::Initialize (Handle&lt;v8::Object&gt; target) {
-  HandleScope scope;
-
-  Local&lt;FunctionTemplate&gt; t = FunctionTemplate::New(WiiMote::New);
-
-  constructor = Persistent&lt;FunctionTemplate&gt;::New(t);
-  constructor-&gt;SetClassName(String::NewSymbol(&quot;WiiMote&quot;));
-
-  NODE_SET_PROTOTYPE_METHOD(constructor, &quot;connect&quot;, Connect);
-  NODE_SET_PROTOTYPE_METHOD(constructor, &quot;disconnect&quot;, Disconnect);
-
-  NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_A&quot;, CWIID_BTN_A);
-  NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_B&quot;, CWIID_BTN_B);
-
-  target-&gt;Set(String::NewSymbol(&quot;WiiMote&quot;), constructor-&gt;GetFunction());
-}
-
-        </pre>
+ 1. void WiiMote::Initialize (Handle&lt;v8::Object&gt; target) {
+ 2.   HandleScope scope;
+ 3.
+ 4.   Local&lt;FunctionTemplate&gt; t = FunctionTemplate::New(WiiMote::New);
+ 5.
+ 6.   constructor = Persistent&lt;FunctionTemplate&gt;::New(t);
+ 7.   constructor-&gt;SetClassName(String::NewSymbol(&quot;WiiMote&quot;));
+ 8.
+ 9.   NODE_SET_PROTOTYPE_METHOD(constructor, &quot;connect&quot;, Connect);
+10.   NODE_SET_PROTOTYPE_METHOD(constructor, &quot;disconnect&quot;, Disconnect);
+11.
+12.   NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_A&quot;, CWIID_BTN_A);
+13.   NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_B&quot;, CWIID_BTN_B);
+14.
+15.   target-&gt;Set(String::NewSymbol(&quot;WiiMote&quot;),
+16.      constructor-&gt;GetFunction());
+17. }</pre>
         </section>
       </article>
 
@@ -312,17 +318,18 @@ void WiiMote::Initialize (Handle&lt;v8::Object&gt; target) {
         <h3>Initialize(...) (if it was JS)</h3>
         <section>
         <pre>
-Local&lt;FunctionTemplate&gt; t = FunctionTemplate::New(WiiMote::New);
-
-constructor = Persistent&lt;FunctionTemplate&gt;::New(t);
-constructor-&gt;SetClassName(String::NewSymbol(&quot;WiiMote&quot;));
-
-target-&gt;Set(String::NewSymbol(&quot;WiiMote&quot;), constructor-&gt;GetFunction());
-        </pre>
+1. Local&lt;FunctionTemplate&gt; t = FunctionTemplate::New(WiiMote::New);
+2. 
+3. constructor = Persistent&lt;FunctionTemplate&gt;::New(t);
+4. constructor-&gt;SetClassName(String::NewSymbol(&quot;WiiMote&quot;));
+5. 
+6. target-&gt;Set(String::NewSymbol(&quot;WiiMote&quot;),
+7.    constructor-&gt;GetFunction());
+</pre>
 <pre>
-module.WiiMote = function WiiMote() {
-  // calls C++ WiiMote::New()
-}
+ 8. module.WiiMote = function WiiMote() {
+ 9.   // calls C++ WiiMote::New()
+10. }
 </pre>
         </section>
       </article>
@@ -332,18 +339,18 @@ module.WiiMote = function WiiMote() {
         <h3>Initialize(...) (if it was JS)</h3>
         <section>
 <pre>
-NODE_SET_PROTOTYPE_METHOD(constructor, &quot;connect&quot;, Connect);
-NODE_SET_PROTOTYPE_METHOD(constructor, &quot;disconnect&quot;, Disconnect);
-
-NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_A&quot;, CWIID_BTN_A);
-NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_B&quot;, CWIID_BTN_B);
+ 1. NODE_SET_PROTOTYPE_METHOD(constructor, &quot;connect&quot;, Connect);
+ 2. NODE_SET_PROTOTYPE_METHOD(constructor, &quot;disconnect&quot;, Disconnect);
+ 3.
+ 4. NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_A&quot;, CWIID_BTN_A);
+ 5. NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_B&quot;, CWIID_BTN_B);
 </pre>
 <pre>
-module.WiiMote.connect = Connect;       // Calls C++ Connect(...)
-module.WiiMote.disconnect = Disconnect; // Calls C++ Disconnect(...)
-
-module.BTN_A = 0x0008; //CWIID_BTN_A;
-module.BTN_B = 0x0004; //CWIID_BTN_B;
+ 6. module.WiiMote.connect = Connect;       // Calls C++ Connect(...)
+ 7. module.WiiMote.disconnect = Disconnect; // Calls C++ Disconnect(...)
+ 8. 
+ 9. module.BTN_A = 0x0008; //CWIID_BTN_A;
+10. module.BTN_B = 0x0004; //CWIID_BTN_B;
 </pre>
         </section>
       </article>
@@ -356,21 +363,21 @@ module.BTN_B = 0x0004; //CWIID_BTN_B;
   console.log('wiimote connected');
 });</pre>
 <pre>
-Handle&lt;Value&gt; WiiMote::Connect(const Arguments&amp; args) {
-  HandleScope scope;
-
-  if(args.Length() == 0 || !args[0]-&gt;IsString()) {
-    return ThrowException(Exception::Error(
-      String::New(&quot;MAC address is required and must be a String.&quot;))
-    );
-  }
-  if(args.Length() == 1 || !args[1]-&gt;IsFunction()) {
-    return ThrowException(Exception::Error(
-      String::New(&quot;Callback is required and must be a Function.&quot;))
-    );
-  }
-  String::Utf8Value mac(args[0]);
-  Local&lt;Function&gt; callback = Local&lt;Function&gt;::Cast(args[1]);
+ 1. Handle&lt;Value&gt; WiiMote::Connect(const Arguments&amp; args) {
+ 2.  HandleScope scope;
+ 3.
+ 4.  if(args.Length() == 0 || !args[0]-&gt;IsString()) {
+ 5.    return ThrowException(Exception::Error(
+ 6.      String::New(&quot;MAC address is required and must be a String.&quot;))
+ 7.    );
+ 8.  }
+ 9.  if(args.Length() == 1 || !args[1]-&gt;IsFunction()) {
+10.    return ThrowException(Exception::Error(
+11.      String::New(&quot;Callback is required and must be a Function.&quot;))
+12.    );
+14.  }
+15.  String::Utf8Value mac(args[0]);
+16.  Local&lt;Function&gt; callback = Local&lt;Function&gt;::Cast(args[1]);
 </pre>
         </section>
       </article>
@@ -399,21 +406,21 @@ Handle&lt;Value&gt; WiiMote::Connect(const Arguments&amp; args) {
         <h3>Connect(...) - Do some async work</h3>
         <section>
 <pre>
-  connect_request* ar = new connect_request();
-  ar-&gt;wiimote = wiimote;
-  str2ba(*mac, &amp;ar-&gt;mac);
-
-  uv_work_t* req = new uv_work_t;
-  req-&gt;data = ar;
-
-  int r = uv_queue_work(uv_default_loop(), req,
-    UV_Connect, UV_AfterConnect);
-  if (r != 0) {
-    // Error handling
-  }
-
-  return Undefined();
-}
+ 1.   connect_request* ar = new connect_request();
+ 2.   ar-&gt;wiimote = wiimote;
+ 3.   str2ba(*mac, &amp;ar-&gt;mac);
+ 4. 
+ 5.   uv_work_t* req = new uv_work_t;
+ 6.   req-&gt;data = ar;
+ 7. 
+ 8.   int r = uv_queue_work(uv_default_loop(), req,
+ 9.      UV_Connect, UV_AfterConnect);
+10.   if (r != 0) {
+11.      // Error handling
+12.   }
+13.
+14.   return Undefined();
+15. }
 </pre>
         </section>
       </article>
@@ -422,16 +429,16 @@ Handle&lt;Value&gt; WiiMote::Connect(const Arguments&amp; args) {
         <h3>UV_Connect(...) - Do some blocking work</h3>
         <section>
 <pre>
-void WiiMote::UV_Connect(uv_work_t* req) {
-  connect_request* ar = static_cast&lt;connect_request* &gt;(req-&gt;data);
-
-  ar-&gt;wiimote = cwiid_open(&amp;ar-&gt;mac, CWIID_FLAG_MESG_IFC)
-  if(ar-&gt;wiimote) {
-    ar-&gt;err = 0;
-  } else {
-    ar-&gt;err = -1;
-  }
-}
+ 1. void WiiMote::UV_Connect(uv_work_t* req) {
+ 2.   connect_request* ar = static_cast&lt;connect_request* &gt;(req-&gt;data);
+ 3. 
+ 4.    ar-&gt;wiimote = cwiid_open(&amp;ar-&gt;mac, CWIID_FLAG_MESG_IFC)
+ 5.    if(ar-&gt;wiimote) {
+ 6.      ar-&gt;err = 0;
+ 7.    } else {
+ 8.      ar-&gt;err = -1;
+ 9.    }
+10. }
 </pre>
         </section>
       </article>
@@ -440,19 +447,20 @@ void WiiMote::UV_Connect(uv_work_t* req) {
         <h3>UV_AfterConnect(...) - Do some after work</h3>
         <section>
 <pre>
-void WiiMote::UV_AfterConnect(uv_work_t* req, int status) {
-  HandleScope scope;
-
-  connect_request* ar = static_cast&lt;connect_request* &gt;(req-&gt;data);
-
-  WiiMote * wiimote = ar-&gt;wiimote;
-
-  if (ar-&gt;err == 0) {
-    // Setup the callback to receive events
-    cwiid_set_data(wiimote-&gt;wiimote, wiimote);
-    cwiid_set_mesg_callback(wiimote-&gt;wiimote, WiiMote::HandleMessages);
-  }
-}
+ 1. void WiiMote::UV_AfterConnect(uv_work_t* req, int status) {
+ 2.   HandleScope scope;
+ 3. 
+ 4.   connect_request* ar = static_cast&lt;connect_request* &gt;(req-&gt;data);
+ 5. 
+ 6.   WiiMote * wiimote = ar-&gt;wiimote;
+ 7. 
+ 8.   if (ar-&gt;err == 0) {
+ 9.     // Setup the callback to receive events
+10.     cwiid_set_data(wiimote-&gt;wiimote, wiimote);
+11.     cwiid_set_mesg_callback(wiimote-&gt;wiimote,
+12.        WiiMote::HandleMessages);
+13.   }
+14. }
 </pre>
         </section>
       </article>
@@ -462,16 +470,16 @@ void WiiMote::UV_AfterConnect(uv_work_t* req, int status) {
         <h3>UV_AfterConnect(..) - Do some callback work</h3>
         <section>
 <pre>
-  TryCatch try_catch;
-
-  Local&lt;Value&gt; argv[1] = { Integer::New(ar-&gt;err) };
-  ar-&gt;callback-&gt;Call(Context::GetCurrent()-&gt;Global(), 1, argv);
-
-  if(try_catch.HasCaught())
-    FatalException(try_catch);
-
-  ar-&gt;callback.Dispose();
-  delete ar;
+ 1.  TryCatch try_catch;
+ 2.
+ 3.  Local&lt;Value&gt; argv[1] = { Integer::New(ar-&gt;err) };
+ 4.  ar-&gt;callback-&gt;Call(Context::GetCurrent()-&gt;Global(), 1, argv);
+ 5.
+ 6.  if(try_catch.HasCaught())
+ 7.    FatalException(try_catch);
+ 8.
+ 9.  ar-&gt;callback.Dispose();
+10.  delete ar;
 </pre>
         </section>
       </article>
@@ -496,6 +504,60 @@ Addon- ->JavaScript: Callback
         -->
       </article>
 
+    <article>
+        <h3>HandleMessages(..) - libcwiid callback</h3>
+        <section>
+<pre>
+1. void WiiMote::HandleMessages(cwiid_wiimote_t *wiimote, int len, union cwiid_mesg mesgs[], struct timespec *timestamp) {
+2.   ...
+3.   // We need to pass this over to the nodejs thread, so it can create V8 objects
+4.   uv_work_t* uv = new uv_work_t;
+5.   uv->data = req;
+6.   int r = uv_queue_work(uv_default_loop(), uv, 
+7.      UV_NOP, WiiMote::HandleMessagesAfter);
+</pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>HandleButtonMessage(..)</h3>
+        <section>
+<pre>
+1. void WiiMote::HandleButtonMessage(struct timespec *ts, cwiid_btn_mesg * msg) {
+2.   HandleScope scope;
+3. 
+4.   Local<Integer> btn = Integer::New(msg->buttons);
+5. 
+6.   Local<Value> argv[2] = { String::New("button"), btn };
+7.   MakeCallback(self, "emit", ARRAY_SIZE(argv), argv);
+8. }
+</pre>
+<pre>
+1.  this.emit('button', CWIID_BTN_A);
+</pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>So what is going on here?</h3>
+        <p>
+          <img class='centered' style='height: 500px' src='diagram-3.svg'>
+        </p>
+        <!--
+participant JavaScript
+participant Addon
+participant Worker
+note over libcwiid: On the libcwiid Thread
+note over JavaScript, Addon: On the Main V8 Thread
+libcwiid->libcwiid: HandleMessages(..)
+libcwiid->libcwiid: uv_queue_work(...)
+libcwiid- ->Addon:
+Worker->Worker: UV_NOP(...)
+Worker- ->Addon: 
+Addon->Addon: HandleMessagesAfter(...)
+Addon- ->JavaScript: emit(...)
+        -->
+      </article>
 
       <article>
         <h2>
@@ -553,7 +615,7 @@ wiimote-&gt;UnRef();</pre>
         <h3>Node is constantly changing!</h3>
 
         <ul>
-          <li>In the last year and half I've been forced to change</li>
+          <li>In the last year I've been forced to change</li>
           <ul>
             <li>EventEmitter</li>
             <ul>
@@ -597,6 +659,16 @@ wiimote-&gt;UnRef();</pre>
       </article>
 
     </section>
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-36551491-1']);
+      _gaq.push(['_trackPageview']);
 
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
   </body>
 </html>
