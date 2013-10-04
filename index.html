@@ -86,7 +86,6 @@
         <h3>TOC</h3>
         <ul>
           <li>Simple demo
-          <!--<ul><li>WiiMote -> Node.js -> Socket.io -> Chrome</li></ul>-->
           </li>
           <li>How to write a Node.js Addon
           <ul>
@@ -94,9 +93,8 @@
             <li>Initialisation</li>
             <li>Calling a function</li>
             <li>Async Work</li>
-            <li>if there is time, EventEmitter</li>
           </ul>
-          </li>
+          <li>Lessons Learnt</li>
         </ul>
       </article>
 
@@ -126,7 +124,7 @@
       <article>
         <h3>Tech</h3>
             <ul>
-              <li>Using <img src="node-logo.png" style="vertical-align:middle"></img></li>
+              <li><img src="node-logo.png" style="vertical-align:middle"></img></li>
               <li>Socket.io (Websockets) for the realtime feedback</li>
               <li>
                 Open source library called libcwiid.
@@ -134,7 +132,7 @@
                   <li>Library written in C</li>
                 </ul>
               </li>
-              <li>and custom nodejs addon, nodewii</li>
+              <li>and custom nodejs addon, <b>nodewii</b></li>
               <ul>
                 <li>Originally by Tim Branyen @tbranyen</li>
                 <li>Taken over by me</li>
@@ -479,59 +477,25 @@ void WiiMote::UV_AfterConnect(uv_work_t* req, int status) {
       </article>
 
       <article>
-        <h3>NodeJS is Single threaded with many worker threads</h3>
-        <!--
+        <h3>So what is going on here?</h3>
         <p>
-          <img class='centered' style='height: 500px' src='nodejs-flow.png'>
+          <img class='centered' style='height: 500px' src='diagram-2.svg'>
         </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
+        <!--
+        <div class="diagram">
+note over JavaScript, Addon: On the Main V8 Thread
+JavaScript->Addon: Connect(...)
+Addon->Addon: uv_queue_work(...)
+Addon- ->JavaScript:
+note over JavaScript, Addon: Other stuff continues to run
+Worker->Worker: UV_Connect(...)
+Worker- ->Addon: 
+Addon->Addon: UV_AfterConnect(...)
+Addon- ->JavaScript: Callback
         </div>
         -->
-        <div class="diagram">
-          v8->worker: doSomething()
-          note right of worker: Do some blocking task
-          worker->v8: done()
-        </div>
       </article>
 
-      <article>
-        <h3>Old nodewii threading model</h3>
-        <!--
-        <p>
-          <img class='centered' style='height: 500px' src='old-flow.png'>
-        </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
-        </div>
-        -->
-        <div class="diagram">
-          v8->wiimote: anyChange()
-          wiimote->v8: NO
-          note left of v8: wait 200ms
-          v8->wiimote: anyChange()
-          wiimote->v8: YES
-          v8->v8: emit()
-        </div>
-      </article>
-
-      <article>
-        <h3>New nodewii threading model</h3>
-        <!--
-        <p>
-          <img class='centered' style='height: 500px' src='new-flow.png'>
-        </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
-        </div>
-        -->
-        <div class="diagram">
-          v8->wiimote: notifyMe()
-          note left of v8: some time goes by
-          wiimote->v8: buttonPress()
-          v8->v8: emit()
-        </div>
-      </article>
 
       <article>
         <h2>
@@ -542,50 +506,72 @@ void WiiMote::UV_AfterConnect(uv_work_t* req, int status) {
       <article>
         <h3>Don't do any V8 on worker threads</h3>
         <p>
-          <img class='centered' style='height: 500px' src='new-flow-bad.png'>
+          <img class='centered' style='height: 500px' src='bad-flow.svg'>
         </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
+<!--
+        <div class="diagram">
+note over JavaScript, Addon: On the Main V8 Thread
+JavaScript->Addon: Connect(...)
+Addon->Addon: uv_queue_work(...)
+Addon- ->JavaScript:
+note over JavaScript, Addon: Other stuff continues to run
+Worker->Worker: UV_Connect(...)
+Worker- ->JavaScript: Callback
         </div>
+-->
       </article>
 
       <article>
-        <h3>Threading is hard</h3>
+        <h3>V8 memory model is tricky</h3>
         <ul>
-          <li>V8 memory model is tricky</li>
-          <ul>
-            <li>Easy to hold memory too long</li>
-            <li>Easy for memory to be garbage collected</li>
-            <li>v8 Embedder's Guide <a href="https://developers.google.com/v8/embed">developers.google.com/v8/embed</a></li>
-          </ul>
-          <li>Most extensions out there leak memory, or use it incorrectly</li>
+          <li>Easy to hold memory too long</li>
+          <li>Easy for memory to be garbage collected</li>
+        </ul>
+        <pre>
+ar-&gt;callback = Persistent&lt;Function&gt;::New(callback);
+wiimote-&gt;Ref();
+wiimote-&gt;UnRef();</pre>
+        <ul>
+          <li>Most Addons out there leak memory, or use it incorrectly</li>
           <ul>
             <li>node-mongodb-native</li>
             <li>node-mysql</li>
           </ul>
-          <li>Valgrind, Clang, and other tools really useful!</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>V8 memory model is tricky</h3>
+        <br />
+        <img src="hipster-hacker.png"></img>
+        <ul>
+          <li><a href="http://valgrind.org/">Valgrind</a>, <a href="http://clang.llvm.org/">Clang</a>, and other tools really useful!</li>
         </ul>
       </article>
 
       <article>
         <h3>Node is constantly changing!</h3>
+
         <ul>
-          <li>EventEmitter</li>
+          <li>In the last year and half I've been forced to change</li>
           <ul>
-            <li>emit('something')</li>
-            <li>on('something', function () {...})</li>
-          </ul>
-          <li>libev -> libuv</li>
-          <ul>
-            <li>
-              The internal threading library used
-            </li>
-          </ul>
-          <li>waf->gyp</li>
-          <ul>
-            <li>
-              Build system
-            </li>
+            <li>EventEmitter</li>
+            <ul>
+              <li>emit('something')</li>
+              <li>on('something', function () {...})</li>
+            </ul>
+            <li>libev -> libuv</li>
+            <ul>
+              <li>
+                The internal threading library used
+              </li>
+            </ul>
+            <li>waf->gyp</li>
+            <ul>
+              <li>
+                Build system
+              </li>
+            </ul>
           </ul>
         </ul>
       </article>
@@ -605,7 +591,7 @@ void WiiMote::UV_AfterConnect(uv_work_t* req, int status) {
 
         <br />
         <h3>
-          <span class="red">SoundBite Communications is hiring!</span><br />
+          <span class="red">Genesys Labs is hiring!</span><br />
         </h3>
         </center>
       </article>
