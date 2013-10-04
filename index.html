@@ -12,7 +12,20 @@
     <title>Controlling Node.js with a wiimote</title>
 
     <meta charset='utf-8'>
-    <script src='slides.js'></script>
+    <script src='html5slides/slides.js'></script>
+
+    <script src="js/jquery-1.10.2.min.js"></script>
+
+    <script src="js/raphael-min.js"></script>
+    <script src="js/underscore-min.js"></script>
+    <script src="js/sequence-diagram-min.js"></script>
+
+    <script>
+    $( document ).ready(function() {
+      // Make all my diagrams pretty
+      $(".diagram").sequenceDiagram({theme: 'hand'});
+    });
+    </script>
   </head>
   
   <style>
@@ -55,15 +68,36 @@
     <section class='slides layout-regular template-bramp'>
 
       <article>
-        <h1>Controlling Node.js with a wiimote</h1>
-        <strong>My experiences with developing multi-threaded nodejs addon</strong>
+        <h1>Node.js + Wiimote = Fun</h1>
+        <strong>How to write a custom Node.js addon that interfaces with a Nintendo Wii Remote</strong>
         <p>
           
           <br />
           Andrew Brampton
           <br />
-          November 13th, 2012
+          October 4th, 2013
+          <br />
+          NationJS
         </p>
+      </article>
+
+
+      <article>
+        <h3>TOC</h3>
+        <ul>
+          <li>Simple demo
+          <!--<ul><li>WiiMote -> Node.js -> Socket.io -> Chrome</li></ul>-->
+          </li>
+          <li>How to write a Node.js Addon
+          <ul>
+            <li>Build System</li>
+            <li>Initialisation</li>
+            <li>Calling a function</li>
+            <li>Async Work</li>
+            <li>if there is time, EventEmitter</li>
+          </ul>
+          </li>
+        </ul>
       </article>
 
       <article>
@@ -84,12 +118,6 @@
             Uses bluetooth
           </li>
           <li>
-            Open source library called libcwiid.
-            <ul>
-              <li>Library written in C</li>
-            </ul>
-          </li>
-          <li>
             <strong><a href='http://localhost:8888/'>DEMO!</a></strong>
           </li>
         </ul>
@@ -98,61 +126,62 @@
       <article>
         <h3>Tech</h3>
             <ul>
-              <li>Using Nodejs (obviously)</li>
+              <li>Using <img src="node-logo.png" style="vertical-align:middle"></img></li>
               <li>Socket.io (Websockets) for the realtime feedback</li>
+              <li>
+                Open source library called libcwiid.
+                <ul>
+                  <li>Library written in C</li>
+                </ul>
+              </li>
               <li>and custom nodejs addon, nodewii</li>
               <ul>
                 <li>Originally by Tim Branyen @tbranyen</li>
+                <li>Taken over by me</li>
                 <li>problem, uses polling, not callback/event driven</li>
+                <li>upgraded to latest Node, libev->libuv, waf->gyp</li>
               </ul>
             </ul>
       </article>
 
       <article>
-        <h3>NodeJS is Single threaded with many worker threads</h3>
+        <h3>So how does it work?</h3>
         <p>
-          <img class='centered' style='height: 500px' src='nodejs-flow.png'>
+          <img class='centered' style='height: 500px' src='diagram-1.svg'>
         </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
+        <!--
+        <div class="diagram">
+          note right of browser: Socket.io
+          browser->node: connect()
+          node->wiimote: notifyMe()
+          note right of node: some time goes by
+          wiimote->node: buttonPress()
+          node->node: emit()
+          node->browser: emit()
         </div>
+        -->
       </article>
 
       <article>
-        <h3>Old nodewii threading model</h3>
-        <p>
-          <img class='centered' style='height: 500px' src='old-flow.png'>
-        </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
-        </div>
-      </article>
-
-      <article>
-        <h3>New nodewii threading model</h3>
-        <p>
-          <img class='centered' style='height: 500px' src='new-flow.png'>
-        </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
-        </div>
-      </article>
-
-      <article>
-        <h3>Big picture</h3>
-        <p>
-          <img class='centered' style='height: 500px' src='full-flow.png'>
-        </p>
-        <div class='source'>
-          Source: www.websequencediagrams.com
-        </div>
-      </article>
-
-      <article>
-        <h3>// Server code</h3>
+        <h3>// Client (Browser) code</h3>
         <section>
         <pre>
-var wii = require(&#39;../../nodewii&#39;)
+&lt;script src=&quot;/socket.io/socket.io.js&quot;&gt;&lt;/script&gt;
+</pre>
+<pre>
+var socket = io.connect();
+socket.on( &#39;button&#39;, function( data ) {
+  console.log(&#39;button was pressed &#39;, data);
+});
+</pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>// Server (Node) code</h3>
+        <section>
+        <pre>
+var wii = require(&#39;nodewii&#39;)
   , express = require(&#39;express&#39;)
   , app     = express()
   , http    = require(&#39;http&#39;)
@@ -173,19 +202,335 @@ wiimote.connect( &#39;00:00:00:00:00:00&#39;, function( err ) {
         </section>
       </article>
 
+
       <article>
-        <h3>// Client code</h3>
+        <h2>
+          So how do I write a addon?
+        </h2>
+      </article>
+
+      <article>
+        <h3>What you need to learn</h3>
+        <ul>
+          <li>C++</li>
+          <li>v8 - Google's JavaScript engine</li>
+          <li>libuv - event library, allows for the non-blocking</li>
+          <li>Searching github</li>
+        </ul>
+        <ul>
+          <li>and whatever you want to interface</li>
+          <li>libcwiid</li>
+        </ul>
+
+      </article>
+
+      <article>
+        <h3>Build system</h3>
+        <ul>
+          <li><b>node-gyp</b> (used to be node-waf)</li>
+          <li>like Grunt <img src="grunt-logo.png" style="width: 100px; vertical-align:middle"></img></li>
+          <li>Filename: <i>binding.gyp</i></li>
+        </ul>
         <section>
         <pre>
-&lt;script src=&quot;/socket.io/socket.io.js&quot;&gt;&lt;/script&gt;
-</pre>
+{
+  "targets": [
+    {
+      "target_name": "nodewii",
+      "sources": [ "src/base.cc", "src/wiimote.cc" ],
+      "libraries": [ "-lcwiid", "-lbluetooth" ]
+    }
+  ]
+}
+        </pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>Building</h3>
+        <pre>$ node-gyp configure</pre>
+        <ul>
+        <li>creates Makefile (on Linux/Mac) or a .vcxproj file (on Windows)</li>
+        </ul>
+        <pre>$ node-gyp build</pre>
+        <ul>
+        <li>Actually builds the project</li>
+        <li>Generates <i>build/nodewii.node</i>
+        <ul><li><pre>var wii = require('/build/nodewii.node')</pre></li></ul>
+        </li>
+        </ul>
+
+      </article>
+
+
+      <article>
+        <h3>base.cc</h3>
+        <section>
+        <pre>
+#include &lt;node.h&gt;
+#include &lt;v8.h&gt;
+
+#include &quot;../include/wiimote.h&quot;
+
+void init(Handle&lt;v8::Object&gt; target) {
+  WiiMote::Initialize(target);
+}
+
+NODE_MODULE(nodewii, init);
+        </pre>
+        <ul>
+          <li>Include v8.h</li>
+          <li>All addons need <b>NODE_MODULE</b></li>
+        </ul>
+        </section>
+      </article>
+
+      <article>
+        <h3>Initialize(...)</h3>
+        <section>
+        <pre>
+void WiiMote::Initialize (Handle&lt;v8::Object&gt; target) {
+  HandleScope scope;
+
+  Local&lt;FunctionTemplate&gt; t = FunctionTemplate::New(WiiMote::New);
+
+  constructor = Persistent&lt;FunctionTemplate&gt;::New(t);
+  constructor-&gt;SetClassName(String::NewSymbol(&quot;WiiMote&quot;));
+
+  NODE_SET_PROTOTYPE_METHOD(constructor, &quot;connect&quot;, Connect);
+  NODE_SET_PROTOTYPE_METHOD(constructor, &quot;disconnect&quot;, Disconnect);
+
+  NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_A&quot;, CWIID_BTN_A);
+  NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_B&quot;, CWIID_BTN_B);
+
+  target-&gt;Set(String::NewSymbol(&quot;WiiMote&quot;), constructor-&gt;GetFunction());
+}
+
+        </pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>Initialize(...) (if it was JS)</h3>
+        <section>
+        <pre>
+Local&lt;FunctionTemplate&gt; t = FunctionTemplate::New(WiiMote::New);
+
+constructor = Persistent&lt;FunctionTemplate&gt;::New(t);
+constructor-&gt;SetClassName(String::NewSymbol(&quot;WiiMote&quot;));
+
+target-&gt;Set(String::NewSymbol(&quot;WiiMote&quot;), constructor-&gt;GetFunction());
+        </pre>
 <pre>
-var socket = io.connect();
-socket.on( &#39;button&#39;, function( data ) {
-  console.log(&#39;button was pressed &#39; + data);
-});
+module.WiiMote = function WiiMote() {
+  // calls C++ WiiMote::New()
+}
 </pre>
         </section>
+      </article>
+
+
+      <article>
+        <h3>Initialize(...) (if it was JS)</h3>
+        <section>
+<pre>
+NODE_SET_PROTOTYPE_METHOD(constructor, &quot;connect&quot;, Connect);
+NODE_SET_PROTOTYPE_METHOD(constructor, &quot;disconnect&quot;, Disconnect);
+
+NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_A&quot;, CWIID_BTN_A);
+NODE_DEFINE_CONSTANT_NAME(target, &quot;BTN_B&quot;, CWIID_BTN_B);
+</pre>
+<pre>
+module.WiiMote.connect = Connect;       // Calls C++ Connect(...)
+module.WiiMote.disconnect = Disconnect; // Calls C++ Disconnect(...)
+
+module.BTN_A = 0x0008; //CWIID_BTN_A;
+module.BTN_B = 0x0004; //CWIID_BTN_B;
+</pre>
+        </section>
+      </article>
+
+
+      <article>
+        <h3>Connect(...) - Arg validation</h3>
+        <section>
+<pre>wiimote.connect( '00:00:00:00:00:00', function( err ) {
+  console.log('wiimote connected');
+});</pre>
+<pre>
+Handle&lt;Value&gt; WiiMote::Connect(const Arguments&amp; args) {
+  HandleScope scope;
+
+  if(args.Length() == 0 || !args[0]-&gt;IsString()) {
+    return ThrowException(Exception::Error(
+      String::New(&quot;MAC address is required and must be a String.&quot;))
+    );
+  }
+  if(args.Length() == 1 || !args[1]-&gt;IsFunction()) {
+    return ThrowException(Exception::Error(
+      String::New(&quot;Callback is required and must be a Function.&quot;))
+    );
+  }
+  String::Utf8Value mac(args[0]);
+  Local&lt;Function&gt; callback = Local&lt;Function&gt;::Cast(args[1]);
+</pre>
+        </section>
+      </article>
+
+<!--
+      <article>
+        <h3>WiiMote::Connect - Reference Counting</h3>
+        <section>
+<pre>
+  WiiMote* wiimote = ObjectWrap::Unwrap&lt;WiiMote&gt;(args.This());
+
+  connect_request* ar = new connect_request();
+  ar-&gt;wiimote = wiimote;
+  str2ba(*mac, &amp;ar-&gt;mac);
+
+  ar-&gt;callback = Persistent&lt;Function&gt;::New(callback);
+
+  wiimote-&gt;Ref();
+</pre>
+        </section>
+        <img src="hipster-hacker.png"></img>
+      </article>
+-->
+
+      <article>
+        <h3>Connect(...) - Do some async work</h3>
+        <section>
+<pre>
+  connect_request* ar = new connect_request();
+  ar-&gt;wiimote = wiimote;
+  str2ba(*mac, &amp;ar-&gt;mac);
+
+  uv_work_t* req = new uv_work_t;
+  req-&gt;data = ar;
+
+  int r = uv_queue_work(uv_default_loop(), req,
+    UV_Connect, UV_AfterConnect);
+  if (r != 0) {
+    // Error handling
+  }
+
+  return Undefined();
+}
+</pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>UV_Connect(...) - Do some blocking work</h3>
+        <section>
+<pre>
+void WiiMote::UV_Connect(uv_work_t* req) {
+  connect_request* ar = static_cast&lt;connect_request* &gt;(req-&gt;data);
+
+  ar-&gt;wiimote = cwiid_open(&amp;ar-&gt;mac, CWIID_FLAG_MESG_IFC)
+  if(ar-&gt;wiimote) {
+    ar-&gt;err = 0;
+  } else {
+    ar-&gt;err = -1;
+  }
+}
+</pre>
+        </section>
+      </article>
+
+    <article>
+        <h3>UV_AfterConnect(...) - Do some after work</h3>
+        <section>
+<pre>
+void WiiMote::UV_AfterConnect(uv_work_t* req, int status) {
+  HandleScope scope;
+
+  connect_request* ar = static_cast&lt;connect_request* &gt;(req-&gt;data);
+
+  WiiMote * wiimote = ar-&gt;wiimote;
+
+  if (ar-&gt;err == 0) {
+    // Setup the callback to receive events
+    cwiid_set_data(wiimote-&gt;wiimote, wiimote);
+    cwiid_set_mesg_callback(wiimote-&gt;wiimote, WiiMote::HandleMessages);
+  }
+}
+</pre>
+        </section>
+      </article>
+
+
+    <article>
+        <h3>UV_AfterConnect(..) - Do some callback work</h3>
+        <section>
+<pre>
+  TryCatch try_catch;
+
+  Local&lt;Value&gt; argv[1] = { Integer::New(ar-&gt;err) };
+  ar-&gt;callback-&gt;Call(Context::GetCurrent()-&gt;Global(), 1, argv);
+
+  if(try_catch.HasCaught())
+    FatalException(try_catch);
+
+  ar-&gt;callback.Dispose();
+  delete ar;
+</pre>
+        </section>
+      </article>
+
+      <article>
+        <h3>NodeJS is Single threaded with many worker threads</h3>
+        <!--
+        <p>
+          <img class='centered' style='height: 500px' src='nodejs-flow.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+        -->
+        <div class="diagram">
+          v8->worker: doSomething()
+          note right of worker: Do some blocking task
+          worker->v8: done()
+        </div>
+      </article>
+
+      <article>
+        <h3>Old nodewii threading model</h3>
+        <!--
+        <p>
+          <img class='centered' style='height: 500px' src='old-flow.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+        -->
+        <div class="diagram">
+          v8->wiimote: anyChange()
+          wiimote->v8: NO
+          note left of v8: wait 200ms
+          v8->wiimote: anyChange()
+          wiimote->v8: YES
+          v8->v8: emit()
+        </div>
+      </article>
+
+      <article>
+        <h3>New nodewii threading model</h3>
+        <!--
+        <p>
+          <img class='centered' style='height: 500px' src='new-flow.png'>
+        </p>
+        <div class='source'>
+          Source: www.websequencediagrams.com
+        </div>
+        -->
+        <div class="diagram">
+          v8->wiimote: notifyMe()
+          note left of v8: some time goes by
+          wiimote->v8: buttonPress()
+          v8->v8: emit()
+        </div>
       </article>
 
       <article>
